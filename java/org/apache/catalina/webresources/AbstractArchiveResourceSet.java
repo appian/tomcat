@@ -206,6 +206,27 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
         return false;
     }
 
+    private String getInternalPathPrefix() {
+        String prefix = getInternalPath();
+        return prefix.length() > 0 && prefix.charAt(0) == '/' ? prefix.substring(1) : prefix;
+    }
+
+    private String stripWebAppMountPrefix(String path, boolean stripLeadingSlash) {
+        // AbstractResourceSet will convert an webAppMount of "/" to "" when set, so we won't need to worry about stripping it off if empty
+        int index = getWebAppMount().length();
+        if (stripLeadingSlash && path.charAt(index) == '/') {
+            index++;
+        }
+        return index > 0 ? path.substring(index) : path;
+    }
+
+    private String transformPathForLookup(String path) {
+        // AbstractResourceSet will convert an internalPath of "/" to "" when set, so we don't need to worry about prepending it if empty
+        String internalPathPrefix = getInternalPathPrefix();
+        // Always strip off the leading '/' to get the JAR path
+        return internalPathPrefix.length() > 0 ? internalPathPrefix + stripWebAppMountPrefix(path, false) : stripWebAppMountPrefix(path, true);
+    }
+
     @Override
     public final WebResource getResource(String path) {
         checkPath(path);
@@ -231,12 +252,10 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
         // an empty resource for requests outside of the mount point.
 
         if (path.startsWith(webAppMount)) {
-            String pathInJar = getInternalPath() + path.substring(
-                    webAppMount.length());
-            // Always strip off the leading '/' to get the JAR path
-            if (pathInJar.length() > 0 && pathInJar.charAt(0) == '/') {
-                pathInJar = pathInJar.substring(1);
-            }
+
+            // Cutting the substring call counts down to reduce the heap usage
+            String pathInJar = transformPathForLookup(path);
+
             if (pathInJar.equals("")) {
                 // Special case
                 // This is a directory resource so the path must end with /
