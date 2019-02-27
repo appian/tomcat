@@ -251,7 +251,9 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
                     // Calls JarFile.getJarEntry() which is multi-release aware
                     jarEntry = getArchiveEntry(pathInJar);
                 } else {
-                    Map<String,JarEntry> jarEntries = getArchiveEntries(true);
+                    // Cache the jar entries after first read (single=false)...speeds up startup for
+                    // applications with a heavyweight classpath and significant up-front resource loading
+                    Map<String,JarEntry> jarEntries = getArchiveEntries(false);
                     if (!(pathInJar.charAt(pathInJar.length() - 1) == '/')) {
                         if (jarEntries == null) {
                             jarEntry = getArchiveEntry(pathInJar + '/');
