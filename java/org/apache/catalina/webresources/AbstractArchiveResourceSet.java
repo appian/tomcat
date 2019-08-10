@@ -322,6 +322,10 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
         }
     }
 
+    protected boolean isCacheArchiveEntries() {
+        return false;
+    }
+
     @Override
     public void gc() {
         synchronized (archiveLock) {
@@ -332,7 +336,9 @@ public abstract class AbstractArchiveResourceSet extends AbstractResourceSet {
                     // Log at least WARN
                 }
                 archive = null;
-                archiveEntries = null;
+                if (!isCacheArchiveEntries()) {
+                    archiveEntries = null;
+                }
             }
         }
     }
