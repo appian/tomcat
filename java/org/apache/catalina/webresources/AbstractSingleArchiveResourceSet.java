@@ -37,6 +37,12 @@ public abstract class AbstractSingleArchiveResourceSet extends AbstractArchiveRe
 
     private volatile Boolean multiRelease;
 
+    private static final boolean CACHE_ARCHIVE_ENTRIES = Boolean.valueOf(System.getProperty("tomcat.cacheArchiveEntries"));
+
+    static {
+        System.out.println("Tomcat Cache Archive Entries ["+CACHE_ARCHIVE_ENTRIES+"]");
+    }
+
     /**
      * A no argument constructor is required for this to work with the digester.
      */
@@ -51,6 +57,10 @@ public abstract class AbstractSingleArchiveResourceSet extends AbstractArchiveRe
         setBase(base);
         setInternalPath(internalPath);
 
+        if (isCacheArchiveEntries()) {
+            archiveEntries = loadArchiveEntries();
+        }
+
         if (getRoot().getState().isAvailable()) {
             try {
                 start();
@@ -60,29 +70,39 @@ public abstract class AbstractSingleArchiveResourceSet extends AbstractArchiveRe
         }
     }
 
+    @Override
+    protected boolean isCacheArchiveEntries() {
+        return CACHE_ARCHIVE_ENTRIES;
+    }
+
+    private HashMap<String,JarEntry> loadArchiveEntries() {
+        JarFile jarFile = null;
+        try {
+            HashMap<String,JarEntry> contents = new HashMap<>();
+            jarFile = openJarFile();
+            Enumeration<JarEntry> entries = jarFile.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                contents.put(entry.getName(), entry);
+            }
+            return contents;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            if (jarFile != null) {
+                closeJarFile();
+            }
+        }
+    }
 
     @Override
     protected HashMap<String,JarEntry> getArchiveEntries(boolean single) {
+        if (isCacheArchiveEntries() && archiveEntries != null) {
+            return archiveEntries;
+        }
         synchronized (archiveLock) {
             if (archiveEntries == null && !single) {
-                JarFile jarFile = null;
-                archiveEntries = new HashMap<>();
-                try {
-                    jarFile = openJarFile();
-                    Enumeration<JarEntry> entries = jarFile.entries();
-                    while (entries.hasMoreElements()) {
-                        JarEntry entry = entries.nextElement();
-                        archiveEntries.put(entry.getName(), entry);
-                    }
-                } catch (IOException ioe) {
-                    // Should never happen
-                    archiveEntries = null;
-                    throw new IllegalStateException(ioe);
-                } finally {
-                    if (jarFile != null) {
-                        closeJarFile();
-                    }
-                }
+                archiveEntries = loadArchiveEntries();
             }
             return archiveEntries;
         }
