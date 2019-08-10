@@ -63,29 +63,31 @@ public abstract class AbstractSingleArchiveResourceSet extends AbstractArchiveRe
 
     @Override
     protected HashMap<String,JarEntry> getArchiveEntries(boolean single) {
-        synchronized (archiveLock) {
-            if (archiveEntries == null && !single) {
-                JarFile jarFile = null;
-                archiveEntries = new HashMap<>();
-                try {
-                    jarFile = openJarFile();
-                    Enumeration<JarEntry> entries = jarFile.entries();
-                    while (entries.hasMoreElements()) {
-                        JarEntry entry = entries.nextElement();
-                        archiveEntries.put(entry.getName(), entry);
-                    }
-                } catch (IOException ioe) {
-                    // Should never happen
-                    archiveEntries = null;
-                    throw new IllegalStateException(ioe);
-                } finally {
-                    if (jarFile != null) {
-                        closeJarFile();
+        if (archiveEntries == null && !single) {
+            synchronized (archiveLock) {
+                if (archiveEntries == null) {
+                    JarFile jarFile = null;
+                    archiveEntries = new HashMap<>();
+                    try {
+                        jarFile = openJarFile();
+                        Enumeration<JarEntry> entries = jarFile.entries();
+                        while (entries.hasMoreElements()) {
+                            JarEntry entry = entries.nextElement();
+                            archiveEntries.put(entry.getName(), entry);
+                        }
+                    } catch (IOException ioe) {
+                        // Should never happen
+                        archiveEntries = null;
+                        throw new IllegalStateException(ioe);
+                    } finally {
+                        if (jarFile != null) {
+                            closeJarFile();
+                        }
                     }
                 }
             }
-            return archiveEntries;
         }
+        return archiveEntries;
     }
 
 
