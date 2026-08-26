@@ -39,7 +39,7 @@ public abstract class AbstractSingleArchiveResourceSet extends AbstractArchiveRe
     private static final boolean CACHE_ARCHIVE_ENTRIES = Boolean.valueOf(System.getProperty("tomcat.cacheArchiveEntries"));
 
     static {
-        System.out.println("Tomcat Cache Archive Entries ["+CACHE_ARCHIVE_ENTRIES+"]");
+        System.out.println("Tomcat Cache Archive Entries [" + CACHE_ARCHIVE_ENTRIES + "]");
     }
 
     /**
@@ -88,7 +88,7 @@ public abstract class AbstractSingleArchiveResourceSet extends AbstractArchiveRe
     private HashMap<String, JarEntry> loadArchiveEntries() {
         JarFile jarFile = null;
         try {
-            HashMap<String,JarEntry> contents = new HashMap<>();
+            HashMap<String, JarEntry> contents = new HashMap<>();
             jarFile = openJarFile();
             Enumeration<JarEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
@@ -106,7 +106,7 @@ public abstract class AbstractSingleArchiveResourceSet extends AbstractArchiveRe
     }
 
     @Override
-    protected Map<String,JarEntry> getArchiveEntries(boolean single) {
+    protected Map<String, JarEntry> getArchiveEntries(boolean single) {
         if (isCacheArchiveEntries() && archiveEntries != null) {
             return archiveEntries;
         }
